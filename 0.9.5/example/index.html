@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <style>
+        .layer {
+            border:1px solid #CCC;
+            width:600px;
+            height:300px;
+            margin:0 auto;
+            padding:10px;
+            font-size:12px;
+            font-family:'courier new';
+        }
+        .layer .under {
+            cursor:pointer;
+            text-decoration: underline;
+        }
+        .layer input[type="text"] {
+            height:21px;
+            line-height:21px;
+            border:1px solid #CCC;
+            outline:none;
+            padding-left:3px;
+            color:#666;
+        }
+        .user-layer {
+            width:600px;
+            margin:20px auto;
+            padding:10px;
+            border:1px solid #CCC;
+            font-size:12px;
+            font-family:'courier new';
+        }
+    </style>
+</head>
+<body>
+<div class="layer">
+    <span class="under">click here to trigger</span>
+    <p>
+        <input type="text" id="username" placeholder="username" />
+        <input type="text" id="password" placeholder="password" />
+        <input type="button" value="submit" id="subBtn" />
+        <input type="button" value="get" id="getBtn" />
+    </p>
+</div>
+<div class="user-layer">
+
+</div>
+
+<script type="text/javascript" src="/lib/jquery-1.10.1.min.js"></script>
+<script type="text/javascript" src="/lib/sea.js"></script>
+<script type="text/javascript" src="config.js"></script>
+<script type="text/javascript">
+seajs.use([
+        //'Application',
+        'Module',
+        'Model',
+        'View',
+        './UserModel',
+        './UserView'
+    ],
+    function(Module,Model,View,UserModel,UserView){
+//        var user = new UserModel();//UserModel.instance();
+//        user.username('jiawei.sun');
+//        user.password('123456');
+//        user.gender('male');
+//        console.log(user.username() + ' @@ ' + user.password() + ' @@ ' + user.gender());
+//
+//        var ChildModel = UserModel.create('ChildModel',function(){
+//            this.fields = [{
+//                'name' : 'address',
+//                'type' : 'string'
+//            },'telephone'];
+//        });
+//        var child = ChildModel.instance();
+//        child.username('sun');
+//        child.address('shanghai');
+//        child.telephone('123456789');
+//        console.log(child.username() + ' @@ ' + child.address() + ' @@ ' + child.telephone() + ' @@ ' + child.address.type);
+
+
+//        var uv = UserView.instance($('.layer'),'<p class="result">hi {{username}},your password is {{password}}!</p>');
+//        uv.render(user.serialize());
+
+        var UserLayerView = View.create('UserLayerView');
+        var UserLayerModule = Module.create('UserLayerModule')
+                .view({
+                    'class' : UserLayerView,
+                    'args' : [$('.user-layer')]
+                })
+                .proto({
+                    'showUser' : function(){
+                        this.view.append(arguments[0]);
+                    }
+                });
+        var ulm = UserLayerModule.instance(function(app,model,view){
+            var that = this;
+            app.on('show.user',function(){
+                that.showUser.apply(that,arguments);
+            });
+        });
+
+        var UserModule = Module.create('UserModule')
+                .view({
+                    'class' : UserView,
+                    'args' : [$('.layer'),'<p class="result">hi {{username}},your password is {{password}}!</p>'],
+                    'events' : {
+                        'click #subBtn' : function(e,that){
+                            var username = $('#username').val(),
+                                password = $('#password').val();
+                            that.showInfo(username,password);
+                        },
+                        'click .under' : function(e,that){
+                            e.preventDefault();
+                            that.user();
+                        },
+                        'click #getBtn' : function(e,that){
+                            that.getUser();
+                        }
+                    }
+                })
+                .model(UserModel)
+                .proto({
+                    'getUser' : function(){
+                        var that = this;
+                        this.model.getModel(function(userModel){
+                            that.store = userModel;
+                            that.view.fill(that.store);
+                        });
+                    },
+                    'user' : function(){
+                        var username = $('#username').val();
+                        this.app.trigger('show.user',username);
+                    },
+                    'showInfo' : function(username,password){
+                        this.view.render({
+                            'username' : username,
+                            'password' : password
+                        });
+                    }
+                });
+        UserModule.instance(function(app,model,view){
+            view.bind({
+                'click .under' : function(){
+                    console.log(1);
+                }
+            });
+            model.on('change.field',function(){
+                console.log(2222);
+            });
+        });
+});
+</script>
+</body>
+</html>
